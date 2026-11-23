@@ -875,6 +875,16 @@ func (c *ApiController) SetPassword() {
 		return
 	}
 
+	if user.Ldap == "" {
+		// Keep the LDAP-published NT hash in step with the new password so
+		// MSCHAPv2-based 802.1X (PEAP/TEAP) accepts the user's real password.
+		err = object.StoreSambaNtPassword(targetUser, newPassword)
+		if err != nil {
+			c.ResponseError(err.Error())
+			return
+		}
+	}
+
 	c.ResponseOk()
 }
 

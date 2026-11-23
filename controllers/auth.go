@@ -1049,6 +1049,14 @@ func (c *ApiController) Login() {
 					ee.RecordCredentialStuffingFailure(authForm.Organization, clientIp, lookupUsername)
 				} else if !isSigninViaLdap && user.Ldap == "" {
 					ee.MarkWeakPasswordOnSignin(user, password)
+
+					// Backfill the NT hash of the password Casdoor has just verified so
+					// the built-in LDAP server can publish it as sambaNTPassword.
+					// MSCHAPv2 (PEAP/TEAP 802.1X) can only be verified against that
+					// hash, so this is what lets Wi-Fi accept the user's real password
+					// without ever storing the password or forcing a reset. Best effort:
+					// a failure here must never fail the login.
+					_ = object.StoreSambaNtPassword(user, password)
 				}
 			}
 		}
